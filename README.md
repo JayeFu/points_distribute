@@ -6,6 +6,9 @@ This package gets infromation about the relative positions between mbx, fwx and 
 ## Output
 This package outputs the goal of joint values under a set of relative positions.
 
+# 目前工作
+- [ ] 构造一个代价函数，在给定一个三角形的情况下，把它分布在每个机器人特定的区域内。
+
 # 优化框架
 
 ## 提前注明
@@ -64,7 +67,7 @@ This package outputs the goal of joint values under a set of relative positions.
 
 从表面上看，这样会构成一个三角形
 
-计算步骤
+## 计算步骤
 
 1. 我首先规定一个长方体，比如说就是整个房间的$\frac{1}{4}\sim \frac{3}{4}$高度，然后长宽也都是$\frac{1}{4}\sim \frac{3}{4}$，这样构成的一个长方体。
 2. 既然我们获得了mbx, fwx和uav构成的三角形，那么我们不妨让整个三角形的重心位于这个长方体的中心，这样就可以保证他们都位于靠中间的位置，不至于让它们过于靠墙。那么，直觉上，这样会对三个机器人在空间中的部署比较有利。
@@ -73,3 +76,9 @@ This package outputs the goal of joint values under a set of relative positions.
 5. 那么，对于三个机械臂中的任意一个来说，任务就变成了机械臂末端的轨迹跟随。
 6. 在获得了轨迹的情况下，我们可以以“可操作度”$\omega=\sqrt{\det(J^TJ)}$来描述当前机械臂的操作性能
 7. 可以设定一个阈值范围，比如说可操作度$\omega$在区间$[a,b]$之间，操作臂的基底是不会发生运动的，但是如果$\omega<a$，那么就要发生基底的移动，让$\omega$重新回到$[a,b]$的区间之中。
+
+# 具体计算
+
+## 边界
+
+我们以$x$轴为分界线，设置三个分界面
