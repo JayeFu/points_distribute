@@ -103,4 +103,46 @@ This package outputs the goal of joint values under a set of relative positions.
    2. 问题：可能存在切变
 
 2. 分成三个区域
-   1. 
+
+# 中期思路
+
+## 运动分配
+
+### 输入
+
+三个机器人的相对位型：
+
+mbx：
+$$
+  T_{mi}=\left[
+  \begin{matrix}
+    I_{3\times 3} & 0_{3\times 1} \\
+    0_{1\times 3} & 1
+  \end{matrix} 
+  \right]
+  =I_{4\times 4}
+$$
+
+fwx:
+$$
+  T_{fi}=\left[
+  \begin{matrix}
+    R_{fi\ 3\times 3} & P_{fi\ 3\times 1} \\
+    0_{1\times 3} & 1
+  \end{matrix} 
+  \right]
+$$
+
+uav:
+$$
+  T_{ui}=\left[
+  \begin{matrix}
+    R_{ui\ 3\times 3} & P_{ui\ 3\times 1} \\
+    0_{1\times 3} & 1
+  \end{matrix} 
+  \right]
+$$
+
+在进行位置分配优化的时候，可能会对上述矩阵进行
+
+## 运动规划
