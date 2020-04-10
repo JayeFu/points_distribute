@@ -16,7 +16,7 @@ text(1.5, 0.75, 0,'区域3');
 text(1.5, 0, 1, '边界1', 'Color', 'Red');
 text(-0.5, 0.5*sqrt(3), 1, '边界2', 'Color', 'Red');
 text(-0.5, -0.5*sqrt(3), 1, '边界3', 'Color', 'Red');
-text(0.1, -0.1, 0.1, '原点', 'Color', 'Red');
+text(-0.6, 0, 0.1, '原点', 'Color', 'Red');
 hold on;
 plot3(0,0,0,'rs','LineWidth',5,'MarkerSize',10);
 
