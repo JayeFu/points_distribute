@@ -61,3 +61,12 @@ zb = -0.75:0.1:0.75;
 [xxb, zzb] = meshgrid(xb, zb);
 yyb = -1.5*ones(size(xxb));
 mesh(xxb, yyb, zzb);
+
+% 画出一个三角形
+X = [-1, 0.8, 0.4];
+Y = [0, -0.5, 0.3];
+Z = [0.4, -0.2, 0.5];
+X = [X, X(1)];
+Y = [Y, Y(1)];
+Z = [Z, Z(1)];
+plot3(X, Y, Z, '-xb');
