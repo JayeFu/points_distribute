@@ -12,6 +12,13 @@ class SampleOptimizer:
         # room dimension of simula
         self._room_dimension = room_dimension
 
+        # bounding box dimension
+        self._box_dimension = room_dimension
+        # all divided by 2
+        self._box_dimension[0] /= 2.0 # x-axis
+        self._box_dimension[1] /= 2.0 # y-axis
+        self._box_dimension[2] /= 2.0 # z-axis
+
         # weights of translation and rotation for traget funciton
         self._trans_weights = (1.0, 1.0, 1.0)
         self._rot_weights = (1.0, 1.0, 1.0)
@@ -117,3 +124,58 @@ class SampleOptimizer:
             time_slice_tuple = (time, m_to_f_tf, m_to_u_tf)
 
             self._relative_pose_list.append(time_slice_tuple)
+
+    def compute_square_distance_to_plane(self, plane, pos_pt): # pos_pt in Vector3
+        
+        # extract item from pos_pt
+        x = pos_pt.x
+        y = pos_pt.y
+        z = pos_pt.z
+
+        # positive x y z positions of bounding box
+        x_box = self._box_dimension[0]/2.0
+        y_box = self._box_dimension[1]/2.0
+        z_box = self._box_dimension[2]/2.0
+
+        # squared distance
+        sq_dist = 0.0
+        
+        if plane == 'front-back': # x-axis
+            # front
+            sq_dist += np.square(x-x_box)
+            # back
+            sq_dist += np.square(x+x_box)
+
+        elif plane == 'left-right': # y-axis
+            # left
+            sq_dist += np.square(y+y_box)
+            # right
+            sq_dist += np.square(y-y_box)
+
+        elif plane == 'up-down': # z-axis
+            # up
+            sq_dist += np.square(z-z_box)
+            # down
+            sq_dist += np.square(z+z_box)
+
+        else: # other planes, error occurs
+            print "ERROR! Wrong plane!"
+
+        return sq_dist
+        
+
+    def compute_distance_cost_of_point(self, pos_pt): # pos_pt in Vector3
+        
+        # distance cost
+        dist_cost = 0.0
+
+        # front and back: x-axis
+        dist_cost += self.compute_square_distance_to_plane('front-back', pos_pt)
+
+        # left and right: y-axis
+        dist_cost += self.compute_square_distance_to_plane('left-right', pos_pt)
+
+        # up and down: z-axis
+        dist_cost += self.compute_square_distance_to_plane('up-down', pos_pt)
+
+        return dist_cost
