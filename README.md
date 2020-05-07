@@ -110,6 +110,16 @@ $$
     \sum_{i \in m,f,u} \Delta_{xi}^2+\Delta_{yi}^2+\Delta_{zi}^2+\Delta_{\alpha i}^2+\Delta_{\beta i}^2+\Delta_{\gamma i}^2
     $$
 
+## 输入约定
+1. 输入应当分成三部分
+   1. 时间
+   2. fwx相对于mbx的位姿
+   3. uav相对于mbx的位姿
+2. 因此，输入应当有$1+7+7=15$列
+   1. 第1列：时间
+   2. 第2-8列：fwx相对于mbx的xyz和四元数
+   3. 第9-15列：uav相对于mbx的xyz和四元数
+
 # Deprecated
 
 ## 计算步骤
