@@ -13,11 +13,12 @@ class SampleOptimizer:
         self._room_dimension = room_dimension
 
         # bounding box dimension
-        self._box_dimension = room_dimension
+        self._box_dimension = tuple()
         # all divided by 2
-        self._box_dimension[0] /= 2.0 # x-axis
-        self._box_dimension[1] /= 2.0 # y-axis
-        self._box_dimension[2] /= 2.0 # z-axis
+        # comma after float to indicate this is tuple
+        self._box_dimension += (self._room_dimension[0]/2.0, ) # x-axis
+        self._box_dimension += (self._room_dimension[1]/2.0, ) # y-axis
+        self._box_dimension += (self._room_dimension[2]/2.0, ) # z-axis
 
         # weights of translation and rotation for traget funciton
         self._trans_weights = (1.0, 1.0, 1.0)
