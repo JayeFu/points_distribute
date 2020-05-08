@@ -5,7 +5,7 @@ import numpy as np
 
 from geometry_msgs.msg import Transform
 
-from points_distribute.TransRotGen import rpy_from_quaternion
+from points_distribute.TransRotGen import Rotation, Translation, rpy_from_quaternion, 
 
 class SampleOptimizer:
     
@@ -32,6 +32,13 @@ class SampleOptimizer:
 
         # a list to contain the realtive poses
         self._relative_pose_list = list()
+
+        # default mbx pose
+        # TODO: currently translation at origin, add initial offset
+        self._T_o_to_m_default = Rotation('y', np.pi/4.0) * Rotation('z', -np.pi/2.0)
+
+        # a list to contain allocated absolute poses
+        self._absolute_poses_list = list()
 
 
     def set_trans_weight(self, trans_weights=(1.0, 1.0, 1.0)):
@@ -308,3 +315,23 @@ class SampleOptimizer:
         cost = dist_cost + change_cost
 
         return cost
+
+    def allocate_first_pose(self):
+
+        # get first time slice tuple
+        first_time_slice_tuple = self._relative_pose_list[0]
+
+        # get the time of first pose
+        time = first_time_slice_tuple[0]
+
+        # tf from mbx to fwx and uav
+        m_to_f_tf = first_time_slice_tuple[1]
+        m_to_u_tf = first_time_slice_tuple[2]
+
+
+
+    def allocate_next_pose(self):
+        pass
+
+    def allocate_other_poses(self):
+        pass
