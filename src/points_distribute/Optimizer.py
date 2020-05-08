@@ -5,7 +5,7 @@ import numpy as np
 
 from geometry_msgs.msg import Vector3, Quaternion, Transform
 
-from points_distribute.TransRotGen import Rotation, Translation, rpy_from_quaternion, transform_to_matrix
+from points_distribute.TransRotGen import Rotation, Translation, rpy_from_matrix, transform_to_matrix
 
 class SampleOptimizer:
     
@@ -207,37 +207,35 @@ class SampleOptimizer:
 
         return dist_cost
 
-    def compute_change_cost_of_tf(self, tf_from_o1, tf_from_o2): # both are Transform-type msg
+    def compute_change_cost_of_T(self, T_o_to_x_prev, T_o_to_x_curr): # both are Transform-type msg
         
-        # translation components of tf1
-        x1 = tf_from_o1.translation.x
-        y1 = tf_from_o1.translation.y
-        z1 = tf_from_o1.translation.z
+        # translation components in previous matrix
+        x_prev = T_o_to_x_prev[0, 3]
+        y_prev = T_o_to_x_prev[1, 3]
+        z_prev = T_o_to_x_prev[2, 3]
 
-        # rotation components of tf1
-        quat1 = tf_from_o1.rotation
-        (roll1, pitch1, yaw1) = rpy_from_quaternion(quat1)
+        # rotation components in previous matrix
+        (roll_prev, pitch_prev, yaw_prev) = rpy_from_matrix(T_o_to_x_prev)
 
-        # translation components of tf2
-        x2 = tf_from_o2.translation.x
-        y2 = tf_from_o2.translation.y
-        z2 = tf_from_o2.translation.z
+        # translation components in current matrix
+        x_curr = T_o_to_x_curr[0, 3]
+        y_curr = T_o_to_x_curr[1, 3]
+        z_curr = T_o_to_x_curr[2, 3]
 
-        # rotation components of tf2
-        quat2 = tf_from_o2.rotation
-        (roll2, pitch2, yaw2) = rpy_from_quaternion(quat1)
+        # rotation components in previous matrix
+        (roll_current, pitch_current, yaw_current) = rpy_from_matrix(T_o_to_x_curr)
 
         # cost of translation
-        cost_x = np.square(x1-x2)
-        cost_y = np.square(y1-y2)
-        cost_z = np.square(z1-z2)
+        cost_x = np.square(x_prev-x_curr)
+        cost_y = np.square(y_prev-y_curr)
+        cost_z = np.square(z_prev-z_curr)
 
         cost_trans = cost_x + cost_y + cost_z
 
         # cost of rotation
-        cost_roll = np.square(roll1-roll2)
-        cost_pitch = np.square(pitch1-pitch2)
-        cost_yaw = np.square(yaw1-yaw2)
+        cost_roll = np.square(roll_prev-roll_current)
+        cost_pitch = np.square(pitch_prev-pitch_current)
+        cost_yaw = np.square(yaw_prev-yaw_current)
 
         cost_rot = cost_roll + cost_pitch + cost_yaw
 
@@ -267,26 +265,26 @@ class SampleOptimizer:
 
         return dist_cost_all
 
-    def compute_change_cost(self, tf_from_o_tuple1, tf_from_o_tuple2):
+    def compute_change_cost(self, T_o_to_tuple_prev, T_o_to_tuple_curr):
         
-        # extract tf1s from tuple
-        tf_from_o_to_m1 = tf_from_o_tuple1[0]
-        tf_from_o_to_f1 = tf_from_o_tuple1[1]
-        tf_from_o_to_u1 = tf_from_o_tuple1[2]
+        # extract previous matrice from tuple
+        T_o_to_m_prev = T_o_to_tuple_prev[0]
+        T_o_to_f_prev = T_o_to_tuple_prev[1]
+        T_o_to_u_prev = T_o_to_tuple_prev[2]
 
-        # extract tf2s from tuple
-        tf_from_o_to_m2 = tf_from_o_tuple2[0]
-        tf_from_o_to_f2 = tf_from_o_tuple2[1]
-        tf_from_o_to_u2 = tf_from_o_tuple2[2]
+        # extract current matrice from tuple
+        T_o_to_m_curr = T_o_to_tuple_curr[0]
+        T_o_to_f_curr = T_o_to_tuple_curr[1]
+        T_o_to_u_curr = T_o_to_tuple_curr[2]
 
         # change cost of mbx
-        change_cost_m = self.compute_change_cost_of_tf(tf_from_o_to_m1, tf_from_o_to_m2)
+        change_cost_m = self.compute_change_cost_of_T(T_o_to_m_prev, T_o_to_m_curr)
 
         # change cost of fwx
-        change_cost_f = self.compute_change_cost_of_tf(tf_from_o_to_f1, tf_from_o_to_f2)
+        change_cost_f = self.compute_change_cost_of_T(T_o_to_f_prev, T_o_to_f_curr)
 
         # change cost of uav
-        change_cost_u = self.compute_change_cost_of_tf(tf_from_o_to_u1, tf_from_o_to_u2)
+        change_cost_u = self.compute_change_cost_of_T(T_o_to_u_prev, T_o_to_u_curr)
 
         # add all change cost together
         change_cost_all = change_cost_m + change_cost_f + change_cost_u
