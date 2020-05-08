@@ -5,7 +5,7 @@ import numpy as np
 
 from geometry_msgs.msg import Transform
 
-from points_distribute.TransRotGen import Rotation, Translation, rpy_from_quaternion, 
+from points_distribute.TransRotGen import Rotation, Translation, rpy_from_quaternion, transform_to_matrix
 
 class SampleOptimizer:
     
@@ -327,6 +327,10 @@ class SampleOptimizer:
         # tf from mbx to fwx and uav
         m_to_f_tf = first_time_slice_tuple[1]
         m_to_u_tf = first_time_slice_tuple[2]
+
+        # convert tf to matrix
+        T_m_to_f = transform_to_matrix(m_to_f_tf)
+        T_m_to_u = transform_to_matrix(m_to_u_tf)
 
 
 
