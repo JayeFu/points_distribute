@@ -244,3 +244,26 @@ def rpy_from_quaternion(quat):
     gamma = np.arctan2(-T_rot[0, 1], T_rot[0, 0])
 
     return (alpha, beta, gamma)
+
+def rpy_from_matrix(T_rot):
+    """extract roll, pitch and yaw respectively from 
+
+    Arguments:
+        T_rot {4x4 Numpy matrix} -- 4x4 homogeneous transform matrix in SE3
+
+    Returns:
+        [tuple] -- a tuple containing roll, pitch, yaw respectively
+    """
+    
+    # alpha, beta, gamma are all restricted to (-pi/2, pi/2), so sin(beta) can be used to calculate beta
+    # alpha: roll : rotation about x-axis
+    # beta : pitch: rotation about y-axis
+    # gamma: yaw  : rotation about z-axis
+
+    alpha = np.arctan2(-T_rot[1, 2], T_rot[2, 2])
+    
+    beta = np.arcsin(T_rot[0, 2])
+    
+    gamma = np.arctan2(-T_rot[0, 1], T_rot[0, 0])
+
+    return (alpha, beta, gamma)

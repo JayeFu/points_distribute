@@ -3,7 +3,7 @@
 import pandas as pd
 import numpy as np
 
-from geometry_msgs.msg import Transform
+from geometry_msgs.msg import Vector3, Quaternion, Transform
 
 from points_distribute.TransRotGen import Rotation, Translation, rpy_from_quaternion, transform_to_matrix
 
@@ -135,21 +135,21 @@ class SampleOptimizer:
 
             self._relative_pose_list.append(time_slice_tuple)
 
-    def compute_square_distance_to_plane(self, plane, pos_vec3):
-        """Funciton to calculate squared distance of a Vector3-type msg to two oppisite plane
+    def compute_square_distance_to_plane(self, plane, T_o_to_x):
+        """Funciton to calculate squared distance of the point in homogeneous transform matrix to two oppisite plane
 
         Arguments:
             plane {str} -- two planes to calculate distance, should only be one in front-back, left-right and up-down
-            pos_vec3 {Vector3} -- Vector3-type msg of a position
+            T_o_to_x {4x4 Numpy matrix} -- homogeneous transform matrix in SE3
 
         Returns:
             [float] -- squared distance
         """
         
         # extract item from pos_pt
-        x = pos_vec3.x
-        y = pos_vec3.y
-        z = pos_vec3.z
+        x = T_o_to_x[0, 3]
+        y = T_o_to_x[1, 3]
+        z = T_o_to_x[2, 3]
 
         # positive x y z positions of bounding box
         x_box = self._box_dimension[0]/2.0
@@ -183,11 +183,11 @@ class SampleOptimizer:
         return sq_dist
         
 
-    def compute_distance_cost_of_vec3(self, pos_vec3):
+    def compute_distance_cost_of_T(self, T_o_to_x):
         """Calculate distance cost of a certain position, containing squared distance to front-back, left-right and up-down
 
         Arguments:
-            pos_vec3 {Vector3} -- Vector3-type msg of a position
+            T_o_to_x {4x4 Numpy matrix} -- homogeneous transform matrix in SE3
 
         Returns:
             [float] -- distance cost to all six planes
@@ -197,13 +197,13 @@ class SampleOptimizer:
         dist_cost = 0.0
 
         # front and back: x-axis
-        dist_cost += self.compute_square_distance_to_plane('front-back', pos_vec3)
+        dist_cost += self.compute_square_distance_to_plane('front-back', T_o_to_x)
 
         # left and right: y-axis
-        dist_cost += self.compute_square_distance_to_plane('left-right', pos_vec3)
+        dist_cost += self.compute_square_distance_to_plane('left-right', T_o_to_x)
 
         # up and down: z-axis
-        dist_cost += self.compute_square_distance_to_plane('up-down', pos_vec3)
+        dist_cost += self.compute_square_distance_to_plane('up-down', T_o_to_x)
 
         return dist_cost
 
@@ -246,25 +246,21 @@ class SampleOptimizer:
 
         return cost_tf_change
 
-    def compute_distance_cost(self, pos_vec3_tuple):
+    def compute_distance_cost(self, T_o_to_tuple):
         
-        # mbx position vector3
-        pos_vec3_m = pos_vec3_tuple[0]
-
-        # fwx position vector3
-        pos_vec3_f = pos_vec3_tuple[1]
-
-        # uav position vector3
-        pos_vec3_u = pos_vec3_tuple[2]
+        # extract matrix from tuple respectively
+        T_o_to_m = T_o_to_tuple[0]
+        T_o_to_f = T_o_to_tuple[1]
+        T_o_to_u = T_o_to_tuple[2]
 
         # mbx distance cost
-        dist_cost_m = self.compute_distance_cost_of_vec3(pos_vec3_m)
+        dist_cost_m = self.compute_distance_cost_of_T(T_o_to_m)
 
         # fwx distance cost
-        dist_cost_f = self.compute_distance_cost_of_vec3(pos_vec3_f)
+        dist_cost_f = self.compute_distance_cost_of_T(T_o_to_f)
 
         # uav distance cost
-        dist_cost_u = self.compute_distance_cost_of_vec3(pos_vec3_u)
+        dist_cost_u = self.compute_distance_cost_of_T(T_o_to_u)
 
         # add all distance cost
         dist_cost_all = dist_cost_m + dist_cost_f + dist_cost_u
@@ -297,20 +293,13 @@ class SampleOptimizer:
 
         return change_cost_all
 
-    def compute_cost(self, tf_from_o_tuple_before, tf_from_o_tuple_current):
+    def compute_cost(self, T_o_to_tuple_prev, T_o_to_tuple_curr):
 
-        # construct pos_vec3_tuple
-        pos_vec3_m = tf_from_o_tuple_current[0].translation
-        pos_vec3_f = tf_from_o_tuple_current[1].translation
-        pos_vec3_u = tf_from_o_tuple_current[0].translation
+        # compute distance cost of current matrice
+        dist_cost = self.compute_distance_cost(T_o_to_tuple_curr)
 
-        pos_vec3_tuple = (pos_vec3_m, pos_vec3_f, pos_vec3_u)
-
-        # compute distance cost of current tfs
-        dist_cost = self.compute_distance_cost(pos_vec3_tuple)
-
-        # compute change cost between previous tfs and current tfs 
-        change_cost = self.compute_change_cost(tf_from_o_tuple_before, tf_from_o_tuple_current)
+        # compute change cost between previous matrice and current matrices 
+        change_cost = self.compute_change_cost(T_o_to_tuple_prev, T_o_to_tuple_curr)
 
         cost = dist_cost + change_cost
 
