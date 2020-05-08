@@ -10,4 +10,4 @@ if __name__ ==  "__main__":
 
     new_pt = Vector3(0, 0, 0)
 
-    print optimizer.compute_distance_cost_of_point(new_pt)
+    print optimizer.compute_distance_cost_of_vec3(new_pt)

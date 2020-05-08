@@ -126,12 +126,21 @@ class SampleOptimizer:
 
             self._relative_pose_list.append(time_slice_tuple)
 
-    def compute_square_distance_to_plane(self, plane, pos_pt): # pos_pt in Vector3
+    def compute_square_distance_to_plane(self, plane, pos_vec3):
+        """Funciton to calculate squared distance of a Vector3-type msg to two oppisite plane
+
+        Arguments:
+            plane {str} -- two planes to calculate distance, should only be one in front-back, left-right and up-down
+            pos_vec3 {Vector3} -- Vector3-type msg of a position
+
+        Returns:
+            [float] -- squared distance
+        """
         
         # extract item from pos_pt
-        x = pos_pt.x
-        y = pos_pt.y
-        z = pos_pt.z
+        x = pos_vec3.x
+        y = pos_vec3.y
+        z = pos_vec3.z
 
         # positive x y z positions of bounding box
         x_box = self._box_dimension[0]/2.0
@@ -165,18 +174,26 @@ class SampleOptimizer:
         return sq_dist
         
 
-    def compute_distance_cost_of_point(self, pos_pt): # pos_pt in Vector3
+    def compute_distance_cost_of_vec3(self, pos_vec3):
+        """Calculate distance cost of a certain position, containing squared distance to front-back, left-right and up-down
+
+        Arguments:
+            pos_vec3 {Vector3} -- Vector3-type msg of a position
+
+        Returns:
+            [float] -- distance cost to all six planes
+        """
         
         # distance cost
         dist_cost = 0.0
 
         # front and back: x-axis
-        dist_cost += self.compute_square_distance_to_plane('front-back', pos_pt)
+        dist_cost += self.compute_square_distance_to_plane('front-back', pos_vec3)
 
         # left and right: y-axis
-        dist_cost += self.compute_square_distance_to_plane('left-right', pos_pt)
+        dist_cost += self.compute_square_distance_to_plane('left-right', pos_vec3)
 
         # up and down: z-axis
-        dist_cost += self.compute_square_distance_to_plane('up-down', pos_pt)
+        dist_cost += self.compute_square_distance_to_plane('up-down', pos_vec3)
 
         return dist_cost
