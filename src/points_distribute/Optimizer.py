@@ -235,6 +235,76 @@ class SampleOptimizer:
         cost_rot = cost_roll + cost_pitch + cost_yaw
 
         # add all cost
-        change_cost = cost_trans + cost_rot
+        cost_tf_change = cost_trans + cost_rot
 
-        return change_cost
+        return cost_tf_change
+
+    def compute_distance_cost(self, pos_vec3_tuple):
+        
+        # mbx position vector3
+        pos_vec3_m = pos_vec3_tuple[0]
+
+        # fwx position vector3
+        pos_vec3_f = pos_vec3_tuple[1]
+
+        # uav position vector3
+        pos_vec3_u = pos_vec3_tuple[2]
+
+        # mbx distance cost
+        dist_cost_m = self.compute_distance_cost_of_vec3(pos_vec3_m)
+
+        # fwx distance cost
+        dist_cost_f = self.compute_distance_cost_of_vec3(pos_vec3_f)
+
+        # uav distance cost
+        dist_cost_u = self.compute_distance_cost_of_vec3(pos_vec3_u)
+
+        # add all distance cost
+        dist_cost_all = dist_cost_m + dist_cost_f + dist_cost_u
+
+        return dist_cost_all
+
+    def compute_change_cost(self, tf_from_o_tuple1, tf_from_o_tuple2):
+        
+        # extract tf1s from tuple
+        tf_from_o_to_m1 = tf_from_o_tuple1[0]
+        tf_from_o_to_f1 = tf_from_o_tuple1[1]
+        tf_from_o_to_u1 = tf_from_o_tuple1[2]
+
+        # extract tf2s from tuple
+        tf_from_o_to_m2 = tf_from_o_tuple2[0]
+        tf_from_o_to_f2 = tf_from_o_tuple2[1]
+        tf_from_o_to_u2 = tf_from_o_tuple2[2]
+
+        # change cost of mbx
+        change_cost_m = self.compute_change_cost_of_tf(tf_from_o_to_m1, tf_from_o_to_m2)
+
+        # change cost of fwx
+        change_cost_f = self.compute_change_cost_of_tf(tf_from_o_to_f1, tf_from_o_to_f2)
+
+        # change cost of uav
+        change_cost_u = self.compute_change_cost_of_tf(tf_from_o_to_u1, tf_from_o_to_u2)
+
+        # add all change cost together
+        change_cost_all = change_cost_m + change_cost_f + change_cost_u
+
+        return change_cost_all
+
+    def compute_cost(self, tf_from_o_tuple_before, tf_from_o_tuple_current):
+
+        # construct pos_vec3_tuple
+        pos_vec3_m = tf_from_o_tuple_current[0].translation
+        pos_vec3_f = tf_from_o_tuple_current[1].translation
+        pos_vec3_u = tf_from_o_tuple_current[0].translation
+
+        pos_vec3_tuple = (pos_vec3_m, pos_vec3_f, pos_vec3_u)
+
+        # compute distance cost of current tfs
+        dist_cost = self.compute_distance_cost(pos_vec3_tuple)
+
+        # compute change cost between previous tfs and current tfs 
+        change_cost = self.compute_change_cost(tf_from_o_tuple_before, tf_from_o_tuple_current)
+
+        cost = dist_cost + change_cost
+
+        return cost
