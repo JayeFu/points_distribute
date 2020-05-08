@@ -5,6 +5,8 @@ import numpy as np
 
 from geometry_msgs.msg import Transform
 
+from points_distribute.TransRotGen import rpy_from_quaternion
+
 class SampleOptimizer:
     
     def __init__(self, room_dimension=(10.0, 6.0, 3.0)):
@@ -197,3 +199,42 @@ class SampleOptimizer:
         dist_cost += self.compute_square_distance_to_plane('up-down', pos_vec3)
 
         return dist_cost
+
+    def compute_change_cost_of_tf(self, tf_from_o1, tf_from_o2): # both are Transform-type msg
+        
+        # translation components of tf1
+        x1 = tf_from_o1.translation.x
+        y1 = tf_from_o1.translation.y
+        z1 = tf_from_o1.translation.z
+
+        # rotation components of tf1
+        quat1 = tf_from_o1.rotation
+        (roll1, pitch1, yaw1) = rpy_from_quaternion(quat1)
+
+        # translation components of tf2
+        x2 = tf_from_o2.translation.x
+        y2 = tf_from_o2.translation.y
+        z2 = tf_from_o2.translation.z
+
+        # rotation components of tf2
+        quat2 = tf_from_o2.rotation
+        (roll2, pitch2, yaw2) = rpy_from_quaternion(quat1)
+
+        # cost of translation
+        cost_x = np.square(x1-x2)
+        cost_y = np.square(y1-y2)
+        cost_z = np.square(z1-z2)
+
+        cost_trans = cost_x + cost_y + cost_z
+
+        # cost of rotation
+        cost_roll = np.square(roll1-roll2)
+        cost_pitch = np.square(pitch1-pitch2)
+        cost_yaw = np.square(yaw1-yaw2)
+
+        cost_rot = cost_roll + cost_pitch + cost_yaw
+
+        # add all cost
+        change_cost = cost_trans + cost_rot
+
+        return change_cost
