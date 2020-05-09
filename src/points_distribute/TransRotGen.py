@@ -2,6 +2,10 @@
 
 import numpy as np
 
+import rospy
+
+from geometry_msgs.msg import Quaternion
+
 def Rotation(axis, angle, in_degree=False):
     """A funtion to return homegeneous rotation matrix
     
@@ -267,3 +271,50 @@ def rpy_from_matrix(T_rot):
     gamma = np.arctan2(-T_rot[0, 1], T_rot[0, 0])
 
     return (alpha, beta, gamma)
+
+def quaternion_from_matrix(T_rot):
+    
+    R_rot = T_rot[0:3, 0:3]
+
+    K2 = np.mat(np.zeros((4,4)))
+
+    # 1st row
+    K2[0, 0] = R_rot[0, 0] - R_rot[1,1]
+    K2[0, 1] = R_rot[1, 0] + R_rot[0, 1]
+    K2[0, 2] = R_rot[2, 0]
+    K2[0, 3] = -R_rot[2, 1]
+
+    # 2nd row
+    K2[1, 0] = K2[0, 1]
+    K2[1, 1] = R_rot[1, 1] - R_rot[0, 0]
+    K2[1, 2] = R_rot[2, 1]
+    K2[1, 3] = R_rot[2, 0]
+
+    # 3rd row
+    K2[2, 0] = K2[0, 2]
+    K2[2, 1] = K2[1, 2]
+    K2[2, 2] = -R_rot[0, 0] - R_rot[1, 1]
+    K2[2, 3] = R_rot[0, 1] - R_rot[1, 0]
+
+    # 4th row
+    K2[3, 0] = K2[0, 3]
+    K2[3, 1] = K2[1, 3]
+    K2[3, 2] = K2[2, 3]
+    K2[3, 3] = R_rot[0, 0] + R_rot[1, 1]
+
+    # do NOT forget coefficient
+    K2 = 0.5 * K2
+
+    # calculate eigen values and eigen vectors of K2
+    K2_eig = np.linalg.eig(K2)
+
+    eig_vec = K2_eig[1][:,0]
+
+    quat = Quaternion()
+
+    quat.x = float(eig_vec[0])
+    quat.y = float(eig_vec[1])
+    quat.z = float(eig_vec[2])
+    quat.w = float(eig_vec[3])
+
+    return quat
