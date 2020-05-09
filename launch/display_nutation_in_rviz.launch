@@ -1,0 +1,9 @@
+<launch>
+
+  <node name="nutation" pkg="points_distribute" type="nutation_tf.py"/>
+  
+  <arg name="rvizconfig" default="$(find points_distribute)/rviz/nutation.rviz" />
+
+  <node name="rviz" pkg="rviz" type="rviz" args="-d $(arg rvizconfig)" required="true" />
+
+</launch>
