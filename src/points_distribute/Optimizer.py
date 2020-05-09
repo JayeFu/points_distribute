@@ -207,7 +207,16 @@ class SampleOptimizer:
 
         return dist_cost
 
-    def compute_change_cost_of_T(self, T_o_to_x_prev, T_o_to_x_curr): # both are Transform-type msg
+    def compute_change_cost_of_T(self, T_o_to_x_prev, T_o_to_x_curr):
+        """Calculate change cost of only one from transform matrix
+
+        Arguments:
+            T_o_to_x_prev {4x4 Numpy matrix} -- previous absolute homogeneous transform matrix in SE3 of x in mbx, fwx or uav
+            T_o_to_x_curr {4x4 Numpy matrix} -- current absolute homogeneous transform matrix in SE3 of x in mbx, fwx or uav
+
+        Returns:
+            [float] -- change cost of x
+        """
         
         # translation components in previous matrix
         x_prev = T_o_to_x_prev[0, 3]
@@ -245,6 +254,14 @@ class SampleOptimizer:
         return cost_tf_change
 
     def compute_distance_cost(self, T_o_to_tuple):
+        """Calculate distance cost of all(mbx, fwx and uav), usually for current transform matrice
+
+        Arguments:
+            T_o_to_tuple {tuple} -- tuple of transform matrice, usually current transform matrice
+
+        Returns:
+            [float] -- distance cost of all
+        """
         
         # extract matrix from tuple respectively
         T_o_to_m = T_o_to_tuple[0]
@@ -266,6 +283,15 @@ class SampleOptimizer:
         return dist_cost_all
 
     def compute_change_cost(self, T_o_to_tuple_prev, T_o_to_tuple_curr):
+        """Calculate change cost of all (mbx, fwx and uav)
+
+        Arguments:
+            T_o_to_tuple_prev {tuple} -- tuple of CURRENT absolute homogeneous transform matrice of all
+            T_o_to_tuple_curr {tuple} -- tuple of PREVIOUS absolute homogeneous transform matrice of all
+
+        Returns:
+            [float] -- change cost of all
+        """
         
         # extract previous matrice from tuple
         T_o_to_m_prev = T_o_to_tuple_prev[0]
@@ -292,6 +318,15 @@ class SampleOptimizer:
         return change_cost_all
 
     def compute_cost(self, T_o_to_tuple_prev, T_o_to_tuple_curr):
+        """Calculate cost of a certain allocation of absolute pose with respective to previous allocation
+
+        Arguments:
+            T_o_to_tuple_prev {tuple} -- tuple of CURRENT absolute homogeneous transform matrice of all
+            T_o_to_tuple_curr {tuple} -- tuple of PREVIOUS absolute homogeneous transform matrice of all
+
+        Returns:
+            [float] -- cost, or say, target function of a certain allocation of aboslute pose
+        """
 
         # compute distance cost of current matrice
         dist_cost = self.compute_distance_cost(T_o_to_tuple_curr)
