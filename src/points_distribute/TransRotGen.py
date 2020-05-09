@@ -308,13 +308,19 @@ def quaternion_from_matrix(T_rot):
     # calculate eigen values and eigen vectors of K2
     K2_eig = np.linalg.eig(K2)
 
-    eig_vec = K2_eig[1][:,0]
+    # eigen values
+    eig_vals = K2_eig[0]
+
+    # index of max value
+    arg_max = eig_vals.argmax()
+    
+    eig_vec = K2_eig[1][:,arg_max]
 
     quat = Quaternion()
 
     quat.x = float(eig_vec[0])
     quat.y = float(eig_vec[1])
     quat.z = float(eig_vec[2])
-    quat.w = float(eig_vec[3])
+    quat.w = -float(eig_vec[3])
 
     return quat

@@ -1,6 +1,6 @@
 <launch>
 
-  <node name="nutation" pkg="points_distribute" type="nutation_tf.py"/>
+  <node name="nutation" pkg="points_distribute" type="nutation_tf.py" output="screen"/>
   
   <arg name="rvizconfig" default="$(find points_distribute)/rviz/nutation.rviz" />
 
