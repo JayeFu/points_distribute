@@ -35,18 +35,34 @@ if __name__ == "__main__":
     rospy.loginfo("sent tf from world to wx")
 
     # rate in the loop
-    rate = rospy.Rate(1.0)
+    rate = rospy.Rate(5)
+
+    # counter for nutation
+    counter = 0
+
+    # step in turning
+    step = 5.0
+
+    # modulus
+    mod = 360.0/5.0
 
     while not rospy.is_shutdown():
 
         # transform matrix from wx to nutation
-        T_wx_to_nutation = Rotation('x', 5.0/180.0*np.pi)
+        T_wx_to_nutation = Rotation('z', counter*step/180.0*np.pi) * Rotation('x', 5.0/180.0*np.pi)
 
-        print T_wx_to_nutation
+        counter += 1
+
+        if abs(counter-mod)<1e-5:
+            counter = 0
+
+        # print "counter = {}".format(counter)
+
+        # print T_wx_to_nutation
 
         quat_wx_to_nutation = quaternion_from_matrix(T_wx_to_nutation)
 
-        print quat_wx_to_nutation
+        # print quat_wx_to_nutation
 
         # transform from wx to nutation
         wx_to_nutation_tf = TransformStamped()
