@@ -3,9 +3,12 @@
 import pandas as pd
 import numpy as np
 
-from geometry_msgs.msg import Vector3, Quaternion, Transform
+import rospy
+
+from geometry_msgs.msg import Vector3, Quaternion, Transform, TransformStamped
 
 from points_distribute.TransRotGen import Rotation, Translation, rpy_from_matrix, transform_to_matrix
+
 
 class SampleOptimizer:
     
@@ -353,6 +356,34 @@ class SampleOptimizer:
         # convert tf to matrix
         T_m_to_f = transform_to_matrix(m_to_f_tf)
         T_m_to_u = transform_to_matrix(m_to_u_tf)
+
+        # generate nutation matrix
+
+        # step for deflection against z-axis
+        step_def = 1.0
+        # range for deflection against z-axis
+        range_def = 10.0
+        # times for iteration in deflection
+        times_def = int(range_def/step_def)
+
+        # step for rotation about z-axis
+        step_rot = 10.0
+        # range for rotation about z-axis
+        range_rot = 360.0
+        # times for iteration in rotatoin
+        times_rot = int(range_rot/step_rot)
+
+        for counter_def in range(times_def+1): # include 10 degrees itself
+            for counter_rot in range(times_rot): # do not need to include 360 degrees, since 0 degree = 360 degree
+                # deflection angle
+                angle_def = counter_def * step_def
+                # rotation angle
+                angle_rot = counter_rot * step_rot
+                # nutation matrix
+                T_m_to_nutation = Rotation('z', angle_rot/180.0*np.pi) * Rotation('x', angle_def/180.0*np.pi) * Rotation('z', -angle_rot/180.0*np.pi)
+                
+                # transform matrix to mbx
+                T_o_to_nutation = self._T_o_to_m_default * T_m_to_nutation
 
 
 

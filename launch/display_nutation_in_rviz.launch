@@ -1,6 +1,7 @@
 <launch>
 
-  <node name="nutation" pkg="points_distribute" type="nutation_tf.py" output="screen" required="true"/>
+  <!--node name="nutation" pkg="points_distribute" type="nutation_tf.py" output="screen" required="true"/-->
+  <node name="auto_tester" pkg="points_distribute" type="auto_tester.py" output="screen" required="true"/>
   
   <arg name="rvizconfig" default="$(find points_distribute)/rviz/nutation.rviz" />
 
