@@ -38,7 +38,7 @@ class SampleOptimizer:
 
         # default mbx pose
         # TODO: currently translation at origin, add initial offset
-        self._T_o_to_m_default = Rotation('y', np.pi/4.0) * Rotation('z', -np.pi/2.0)
+        self._T_o_to_m_default = Translation('z', -0.2) * Rotation('y', np.pi/4.0) * Rotation('z', -np.pi/2.0)
 
         # a list to contain allocated absolute poses
         self._absolute_poses_list = list()
@@ -132,11 +132,14 @@ class SampleOptimizer:
             m_to_u_tf.rotation.x = time_slice[11]
             m_to_u_tf.rotation.y = time_slice[12]
             m_to_u_tf.rotation.z = time_slice[13]
-            m_to_u_tf.rotation.w = time_slice[15]
+            m_to_u_tf.rotation.w = time_slice[14]
 
             time_slice_tuple = (time, m_to_f_tf, m_to_u_tf)
 
             self._relative_pose_list.append(time_slice_tuple)
+
+            # get number of relative poses
+            # print len(self._relative_pose_list)
 
     def compute_square_distance_to_plane(self, plane, T_o_to_x):
         """Funciton to calculate squared distance of the point in homogeneous transform matrix to two oppisite plane
@@ -373,6 +376,16 @@ class SampleOptimizer:
         # times for iteration in rotatoin
         times_rot = int(range_rot/step_rot)
 
+        # minimum cost for allocating first pose
+        cost_min = 100.0
+        # counter of both deflection and rotation at minimum cost
+        counter_min = None # will be tuple
+        # angle of both deflection and rotation at minimum cost
+        angle_min = None # will be tuple
+        # tuple of transform matrice of mbx, fwx and uav
+        T_o_to_tuple_min = None # will be tuple
+
+        # iterate for each deflection angle and nutation angle
         for counter_def in range(times_def+1): # include 10 degrees itself
             for counter_rot in range(times_rot): # do not need to include 360 degrees, since 0 degree = 360 degree
                 # deflection angle
@@ -380,12 +393,32 @@ class SampleOptimizer:
                 # rotation angle
                 angle_rot = counter_rot * step_rot
                 # nutation matrix
-                T_m_to_nutation = Rotation('z', angle_rot/180.0*np.pi) * Rotation('x', angle_def/180.0*np.pi) * Rotation('z', -angle_rot/180.0*np.pi)
+                T_m_with_nutation = Rotation('z', angle_rot/180.0*np.pi) * Rotation('x', angle_def/180.0*np.pi) * Rotation('z', -angle_rot/180.0*np.pi)
                 
                 # transform matrix to mbx
-                T_o_to_nutation = self._T_o_to_m_default * T_m_to_nutation
+                T_o_to_m_with_nutation = self._T_o_to_m_default * T_m_with_nutation
 
+                # calculate matrix for fwx and uav
+                T_o_to_f = T_o_to_m_with_nutation * T_m_to_f
+                T_o_to_u = T_o_to_m_with_nutation * T_m_to_u
 
+                T_o_to_tuple = (T_o_to_m_with_nutation, T_o_to_f, T_o_to_u)
+
+                cost = self.compute_distance_cost(T_o_to_tuple)
+
+                # print "At (counter_def, counter_rot)=({}, {}), cost={}".format(counter_def, counter_rot, cost)
+
+                if cost < cost_min:
+                    cost_min = cost
+                    counter_min = (counter_def, counter_rot)
+                    angle_min = (angle_def, angle_rot)
+                    T_o_to_tuple_min = T_o_to_tuple
+
+        print "At (counter_def, counter_rot)=({}, {}), cost_min={}".format(counter_min[0], counter_min[1], cost_min)
+        print "Then (angle_def, angle_rot)=({}, {})".format(angle_min[0], angle_min[1])
+
+        # append to relative pose list
+        self._relative_pose_list.append(T_o_to_tuple_min)
 
     def allocate_next_pose(self):
         pass
