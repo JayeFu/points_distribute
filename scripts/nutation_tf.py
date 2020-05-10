@@ -48,8 +48,15 @@ if __name__ == "__main__":
 
     while not rospy.is_shutdown():
 
+        # x-axis in moving coordinate
+        i_standard = np.mat(np.array([1, 0, 0, 1]).reshape((-1, 1)))
+
         # transform matrix from wx to nutation
-        T_wx_to_nutation = Rotation('z', counter*step/180.0*np.pi) * Rotation('x', 5.0/180.0*np.pi)
+        T_wx_to_nutation = Rotation('z', counter*step/180.0*np.pi) * Rotation('x', 5.0/180.0*np.pi) * Rotation('z', -counter*step/180.0*np.pi)
+
+        # x-axis of moving coordinate represented in global coordinate
+        i_global = T_wx_to_nutation * i_standard
+        print i_global
 
         counter += 1
 
