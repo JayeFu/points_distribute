@@ -7,8 +7,9 @@ import rospy
 
 from geometry_msgs.msg import Vector3, Quaternion, Transform, TransformStamped
 
-from points_distribute.TransRotGen import Rotation, Translation, rpy_from_matrix, transform_to_matrix
+from points_distribute.TransRotGen import Rotation, Translation, rpy_from_matrix, xyz_from_matrix, transform_to_matrix
 
+import time
 
 class SampleOptimizer:
     
@@ -30,8 +31,36 @@ class SampleOptimizer:
         self._rot_weights = (1.0, 1.0, 1.0)
 
         # range of deviation for sampling
-        self._trans_range = (0.05, 0.05, 0.05)
-        self._rot_range = (0.05, 0.05, 0.05)
+        self._trans_range = (0.03, 0.03, 0.03)
+        self._rot_range = (0.03, 0.03, 0.03)
+
+        # steps of deviation for sampling
+        self._trans_step = (0.01, 0.01, 0.01)
+        self._rot_step = (0.01, 0.01, 0.01)
+
+        # times for iteration in sampling of translation
+        self._trans_seq_list = list()
+        
+        for idx in range(3):
+            start = -self._trans_range[idx]
+            end = self._trans_range[idx]
+            num = 2*int(self._trans_range[idx]/self._trans_step[idx]) + 1
+            trans_seq = np.linspace(start, end, num=num)
+            self._trans_seq_list.append(trans_seq)
+
+        # print self._trans_times
+
+        # times for iteration in sampling of rotation
+        self._rot_seq_list = list()
+
+        for idx in range(3):
+            start = -self._rot_range[idx]
+            end = self._rot_range[idx]
+            num = 2*int(self._rot_range[idx]/self._rot_step[idx]) + 1
+            rot_seq = np.linspace(start, end, num=num)
+            self._rot_seq_list.append(rot_seq)
+
+        # print self._rot_times
 
         # a list to contain the realtive poses
         self._relative_pose_list = list()
@@ -108,7 +137,7 @@ class SampleOptimizer:
             # get the data of a certain time point
             time_slice = relative_pose_array[row_idx]
 
-            time = time_slice[0]
+            happen_time = time_slice[0]
 
             # transform from mbx to fwx
             m_to_f_tf = Transform()
@@ -134,7 +163,7 @@ class SampleOptimizer:
             m_to_u_tf.rotation.z = time_slice[13]
             m_to_u_tf.rotation.w = time_slice[14]
 
-            time_slice_tuple = (time, m_to_f_tf, m_to_u_tf)
+            time_slice_tuple = (happen_time, m_to_f_tf, m_to_u_tf)
 
             self._relative_pose_list.append(time_slice_tuple)
 
@@ -350,7 +379,7 @@ class SampleOptimizer:
         first_time_slice_tuple = self._relative_pose_list[0]
 
         # get the time of first pose
-        time = first_time_slice_tuple[0]
+        happen_time = first_time_slice_tuple[0]
 
         # tf from mbx to fwx and uav
         m_to_f_tf = first_time_slice_tuple[1]
@@ -404,11 +433,14 @@ class SampleOptimizer:
 
                 T_o_to_tuple = (T_o_to_m_with_nutation, T_o_to_f, T_o_to_u)
 
+                # calculate cost of current poses
                 cost = self.compute_distance_cost(T_o_to_tuple)
 
                 # print "At (counter_def, counter_rot)=({}, {}), cost={}".format(counter_def, counter_rot, cost)
 
+                # if cost less than least cost before
                 if cost < cost_min:
+                    # update cost, counter, angle and matrix
                     cost_min = cost
                     counter_min = (counter_def, counter_rot)
                     angle_min = (angle_def, angle_rot)
@@ -418,10 +450,101 @@ class SampleOptimizer:
         print "Then (angle_def, angle_rot)=({}, {})".format(angle_min[0], angle_min[1])
 
         # append to relative pose list
-        self._relative_pose_list.append(T_o_to_tuple_min)
+        self._absolute_poses_list.append(T_o_to_tuple_min)
 
-    def allocate_next_pose(self):
-        pass
+    def allocate_next_pose(self, num):
+
+        # read out current tfs from mbx to fwx and from mbx to uav
+        current_time_slice_tuple = self._relative_pose_list[0]
+
+        # get the time of first pose
+        happen_time = current_time_slice_tuple[0]
+
+        # tf from mbx to fwx and uav
+        m_to_f_tf = current_time_slice_tuple[1]
+        m_to_u_tf = current_time_slice_tuple[2]
+
+        # convert tf to matrix
+        T_m_to_f = transform_to_matrix(m_to_f_tf)
+        T_m_to_u = transform_to_matrix(m_to_u_tf)
+        
+        # get last absolute poses in history
+        T_o_to_tuple_prev = self._absolute_poses_list[-1]
+
+        # get last absolute pose of mbx
+        T_o_to_m_prev = T_o_to_tuple_prev[0]
+        # print T_o_to_m_prev
+
+        # extract rpy and xyz from matrix for later add or minus
+        (roll_m_prev, pitch_m_prev, yaw_m_prev) = rpy_from_matrix(T_o_to_m_prev)
+        (x_m_prev, y_m_prev, z_m_prev) = xyz_from_matrix(T_o_to_m_prev)
+
+        # T_m_trans = Translation('x', x_m_prev) * Translation('y', y_m_prev) * Translation('z', z_m_prev)
+        # T_m_rot = Rotation('x', roll_m_prev) * Rotation('y', pitch_m_prev) * Rotation('z', yaw_m_prev)
+
+        # print T_m_trans * T_m_rot
+
+        # extract translation sequence from list
+        X_seq = self._trans_seq_list[0]
+        Y_seq = self._trans_seq_list[1]
+        Z_seq = self._trans_seq_list[2]
+
+        # extract rotation sequence from list
+        Roll_seq = self._rot_seq_list[0]
+        Pitch_seq = self._rot_seq_list[1]
+        Yaw_seq = self._rot_seq_list[2]
+
+        # since translation will only change the vector column, so calculate it first to reduce run time
+        T_m_trans = Translation('x', x_m_prev) * Translation('y', y_m_prev) * Translation('z', z_m_prev)
+
+        # minimum cost
+        cost_min = 100.0
+        # tuple to contain dX, dY, dZ, dRoll, dPitch, dYaw corresponding to minimum cost
+        addon_min = None
+        # tuple to contain absolute transform matrice for mbx, fwx and uav
+        T_o_to_tuple_min = None
+
+        # start sampling
+        # print "Start iteration"
+        # start = time.time()
+        for dX in X_seq:
+            for dY in Y_seq:
+                for dZ in Z_seq:
+                    for dRoll in Roll_seq:
+                        for dPitch in Pitch_seq:
+                            for dYaw in Yaw_seq:
+                                # get translation matrix
+                                T_m_trans[0, 3] = x_m_prev + dX
+                                T_m_trans[1, 3] = y_m_prev + dY
+                                T_m_trans[2, 3] = z_m_prev + dZ
+                                # get rotation matrix
+                                T_m_rot = Rotation('x', roll_m_prev+dRoll) * Rotation('y', pitch_m_prev+dPitch) * Rotation('z', yaw_m_prev+dYaw)
+                                # get origin to mbx current matrix
+                                T_o_to_m_curr = T_m_trans * T_m_rot
+                                # get origin to mbx and fwx current matrix respectively
+                                T_o_to_f_curr = T_o_to_m_curr * T_m_to_f
+                                T_o_to_u_curr = T_o_to_m_curr * T_m_to_u
+                                
+                                # combine into tuple
+                                T_o_to_tuple_curr = (T_o_to_m_curr, T_o_to_f_curr, T_o_to_u_curr)
+
+                                cost = self.compute_cost(T_o_to_tuple_prev, T_o_to_tuple_curr)
+                                # print "cost={}".format(cost)
+
+                                # find minimum cost
+                                if cost < cost_min:
+                                    # update if minimum in history larger than current cost
+                                    cost_min = cost
+                                    addon_min = (dX, dY, dZ, dRoll, dPitch, dYaw)
+                                    T_o_to_tuple_min = T_o_to_tuple_curr
+        # print "End iteration"
+        # end = time.time()
+        # print "Use time {}s".format(end-start)
+
+        print "At {}, cost_min={}".format(addon_min, cost_min)
+        print "Then, abs matrice: {}".format(T_o_to_tuple_min)
+
+        self._absolute_poses_list.append(T_o_to_tuple_min)
 
     def allocate_other_poses(self):
         pass

@@ -19,3 +19,6 @@ if __name__ ==  "__main__":
 
     # allocate first pose
     optimizer.allocate_first_pose()
+
+    # testing with allocate next pose
+    optimizer.allocate_next_pose(num=1)
