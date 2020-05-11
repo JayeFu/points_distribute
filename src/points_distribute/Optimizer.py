@@ -375,6 +375,8 @@ class SampleOptimizer:
 
     def allocate_first_pose(self):
 
+        print "Allocating 1st pose"
+
         # get first time slice tuple
         first_time_slice_tuple = self._relative_pose_list[0]
 
@@ -446,13 +448,15 @@ class SampleOptimizer:
                     angle_min = (angle_def, angle_rot)
                     T_o_to_tuple_min = T_o_to_tuple
 
-        print "At (counter_def, counter_rot)=({}, {}), cost_min={}".format(counter_min[0], counter_min[1], cost_min)
-        print "Then (angle_def, angle_rot)=({}, {})".format(angle_min[0], angle_min[1])
+        # print "At (counter_def, counter_rot)=({}, {}), cost_min={}".format(counter_min[0], counter_min[1], cost_min)
+        # print "Then (angle_def, angle_rot)=({}, {})".format(angle_min[0], angle_min[1])
 
         # append to relative pose list
         self._absolute_poses_list.append(T_o_to_tuple_min)
 
     def allocate_next_pose(self, num):
+
+        print "Allocating {}th pose".format(num+1)
 
         # read out current tfs from mbx to fwx and from mbx to uav
         current_time_slice_tuple = self._relative_pose_list[0]
@@ -528,6 +532,7 @@ class SampleOptimizer:
                                 # combine into tuple
                                 T_o_to_tuple_curr = (T_o_to_m_curr, T_o_to_f_curr, T_o_to_u_curr)
 
+                                # calculate cost for current abs poses
                                 cost = self.compute_cost(T_o_to_tuple_prev, T_o_to_tuple_curr)
                                 # print "cost={}".format(cost)
 
@@ -541,10 +546,18 @@ class SampleOptimizer:
         # end = time.time()
         # print "Use time {}s".format(end-start)
 
-        print "At {}, cost_min={}".format(addon_min, cost_min)
-        print "Then, abs matrice: {}".format(T_o_to_tuple_min)
+        # print "At {}, cost_min={}".format(addon_min, cost_min)
+        # print "Then, abs matrice: {}".format(T_o_to_tuple_min)
 
         self._absolute_poses_list.append(T_o_to_tuple_min)
 
     def allocate_other_poses(self):
-        pass
+        
+        # number of time points in _relative_pose_list
+        pt_num = len(self._relative_pose_list)
+
+        # iterate through relative pose list except the first since it has been allocated through allocate_first_pose
+        for pt_idx in range(pt_num-1):
+            self.allocate_next_pose(pt_idx+1)
+
+        print "Allocation finished"

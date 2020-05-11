@@ -21,4 +21,7 @@ if __name__ ==  "__main__":
     optimizer.allocate_first_pose()
 
     # testing with allocate next pose
-    optimizer.allocate_next_pose(num=1)
+    # optimizer.allocate_next_pose(num=1)
+
+    # allocate other poses except the first one
+    optimizer.allocate_other_poses()
