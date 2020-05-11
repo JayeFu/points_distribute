@@ -14,6 +14,11 @@ import time
 class SampleOptimizer:
     
     def __init__(self, room_dimension=(10.0, 6.0, 3.0)):
+        """Construction function for SampleOptimizer
+
+        Keyword Arguments:
+            room_dimension {tuple} -- room dimension, [0]:x, [1]:y, [2]:z (default: {(10.0, 6.0, 3.0)})
+        """
         
         # room dimension of simula
         self._room_dimension = room_dimension
@@ -122,6 +127,17 @@ class SampleOptimizer:
         self._rot_range = rot_range
 
     def read_relative_poses(self, file_name="relative_poses.csv"):
+        """Read relative poses between mbx, fwx and uav
+
+        Keyword Arguments:
+            file_name {str} -- csv file containing relative poses (default: {"relative_poses.csv"})
+            index definition:
+            [0]: time
+            [1]-[3]: x,y,z between mbx and fwx
+            [4]-[7]: qx,qy,qz,qw between mbx and fwx
+            [8]-[10]: x,y,z between mbx and uav
+            [11]-[14]: qx,qy,qz,qw between mbx and uav
+        """
         
         # read out the data from csv files
         csv_data = pd.read_csv(file_name) # in DataFrame
@@ -374,6 +390,8 @@ class SampleOptimizer:
         return cost
 
     def allocate_first_pose(self):
+        """Allocate first pose from relative pose list to absolute pose list
+        """
 
         print "Allocating 1st pose"
 
@@ -455,6 +473,11 @@ class SampleOptimizer:
         self._absolute_poses_list.append(T_o_to_tuple_min)
 
     def allocate_next_pose(self, num):
+        """Allocate next pose from relative pose list to absolute pose list
+
+        Arguments:
+            num {int} -- index of relative pose to be allocated in list
+        """
 
         print "Allocating {}th pose".format(num+1)
 
@@ -552,6 +575,8 @@ class SampleOptimizer:
         self._absolute_poses_list.append(T_o_to_tuple_min)
 
     def allocate_other_poses(self):
+        """Allocate other poses except for 1st pose by iterating through relative pose list
+        """
         
         # number of time points in _relative_pose_list
         pt_num = len(self._relative_pose_list)
